@@ -1,2 +1,5 @@
-flask
-websockets
+Flask
+Flask-SocketIO
+itsdangerous
+qrcode
+Pillow
