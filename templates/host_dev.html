@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Fateline</title>
+<title>Fateline — Admin</title>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
 <style>
   :root { --gold: #c9a84c; --deep: #0d0a0e; --card-bg: #1a1520; --accent: #8b4cf7; }
@@ -73,23 +73,6 @@
     margin-bottom: 1.5rem;
   }
 
-  .divider {
-    display: flex;
-    align-items: center;
-    gap: 1rem;
-    margin: 1.5rem 0;
-    color: rgba(232,220,200,0.2);
-    font-size: 0.8rem;
-    font-family: 'Cinzel', serif;
-    letter-spacing: 0.1em;
-  }
-  .divider::before, .divider::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: rgba(201,168,76,0.15);
-  }
-
   .key-section label {
     display: block;
     font-family: 'Cinzel', serif;
@@ -112,7 +95,6 @@
     font-size: 1.1rem;
     letter-spacing: 0.15em;
     text-align: center;
-    text-transform: uppercase;
     outline: none;
     transition: border-color 0.2s, box-shadow 0.2s;
     margin-bottom: 0.8rem;
@@ -146,19 +128,6 @@
     box-shadow: 0 8px 24px rgba(201,168,76,0.35);
   }
 
-  .tester-link {
-    display: inline-block;
-    margin-top: 1.5rem;
-    color: rgba(139,76,247,0.7);
-    font-size: 0.85rem;
-    text-decoration: none;
-    font-style: italic;
-    transition: color 0.2s;
-    border-bottom: 1px solid rgba(139,76,247,0.2);
-    padding-bottom: 1px;
-  }
-  .tester-link:hover { color: #b88af0; border-color: rgba(139,76,247,0.5); }
-
   .error {
     background: rgba(239,68,68,0.1);
     border: 1px solid rgba(239,68,68,0.3);
@@ -167,13 +136,6 @@
     color: #fca5a5;
     font-size: 0.9rem;
     margin-bottom: 1rem;
-  }
-
-  .hint {
-    font-size: 0.8rem;
-    color: rgba(232,220,200,0.3);
-    font-style: italic;
-    margin-top: 0.8rem;
   }
 
   @keyframes floatIn {
@@ -186,10 +148,10 @@
 <div class="container">
   <div class="crest">⚜</div>
   <h1>Fateline</h1>
-  <p class="tagline">Courts against Monsters. Fate decides all.</p>
+  <p class="tagline">Admin access only.</p>
 
   <div class="panel">
-    <p>Scan the QR code on your copy of Fateline to begin — or enter the secret key printed beneath it.</p>
+    <p>Enter the admin password to access the developer host panel.</p>
 
     {% if error %}
     <div class="error">{{ error }}</div>
@@ -197,25 +159,18 @@
 
     <form method="POST">
       <div class="key-section">
-        <label>Secret Key</label>
+        <label>Admin Password</label>
         <input
           class="key-input"
-          type="text"
-          name="key"
-          placeholder="e.g. 123456789"
+          type="password"
+          name="password"
+          placeholder="••••••••••"
+          autofocus
           autocomplete="off"
-          autocorrect="off"
-          spellcheck="false"
         >
       </div>
       <button class="submit-btn" type="submit">Enter the Arena</button>
     </form>
-
-    <p class="hint">Your key is printed beneath the QR code on your game box.</p>
-
-    <div class="divider">or</div>
-
-    <a class="tester-link" href="/host-dev">I'm a tester →</a>
   </div>
 </div>
 </body>

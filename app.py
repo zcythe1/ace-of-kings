@@ -632,14 +632,8 @@ def host_dev():
             error = "Wrong password."
     else:
         error = ""
-    
-    return f"""
-        <form method="POST">
-            <input type="password" name="password" placeholder="Admin password" autofocus>
-            <button type="submit">Enter</button>
-            <p style="color:red">{error}</p>
-        </form>
-    """
+
+    return render_template("host_dev.html", error=error)
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)
