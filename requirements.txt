@@ -2,11 +2,4 @@ flask
 flask-socketio
 itsdangerous
 eventlet
-random
-string
-werkzeug.security
-product_codes_dict
-threading
 qrcode
-json
-os
