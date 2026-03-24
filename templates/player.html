@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fateline – {{name}}</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+<style>
+  .action-btn { 
+    background: linear-gradient(135deg, #c9a84c, #8b6820); 
+    border: none; 
+    border-radius: 8px; 
+    padding: 0.6rem 1.5rem; 
+    color: #0d0a0e; 
+    font-family: 'Cinzel', serif; 
+    font-size: 0.9rem;
+    font-weight: 700; 
+    letter-spacing: 0.1em; 
+    cursor: pointer; 
+    text-transform: uppercase; 
+    transition: all 0.2s; 
+  }
+  .action-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(201,168,76,0.4); }
+  :root { --gold: #c9a84c; --deep: #0d0a0e; --card-bg: #1a1520; --accent: #8b4cf7; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: var(--deep); color: #e8dcc8; font-family: 'Crimson Pro', serif; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse 80% 60% at 20% 40%, rgba(139,76,247,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .layout { max-width: 500px; margin: 0 auto; padding: 1rem; }
+  
+  /* Role reveal */
+  #role-reveal {
+    text-align: center;
+    padding: 3rem 1rem;
+    display: none;
+  }
+  .role-card {
+    background: var(--card-bg);
+    border: 2px solid rgba(201,168,76,0.3);
+    border-radius: 16px;
+    padding: 2rem;
+    margin: 1rem auto;
+    max-width: 280px;
+    animation: floatIn 0.6s ease-out;
+  }
+  @keyframes floatIn { from { opacity:0;transform:translateY(30px) rotateX(20deg); } to { opacity:1;transform:translateY(0) rotateX(0); } }
+  .role-name { font-family: 'Cinzel', serif; font-size: 2rem; font-weight: 900; color: var(--gold); }
+  .team-badge { display: inline-block; padding: 0.3rem 1rem; border-radius: 20px; font-size: 0.8rem; font-family: 'Cinzel', serif; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 0.5rem; }
+  .court-badge { background: rgba(201,168,76,0.2); color: var(--gold); border: 1px solid rgba(201,168,76,0.4); }
+  .monster-badge { background: rgba(139,76,247,0.2); color: #b88af0; border: 1px solid rgba(139,76,247,0.4); }
+  .ability-text { font-style: italic; font-size: 0.95rem; color: rgba(232,220,200,0.6); margin-top: 0.8rem; line-height: 1.5; }
+
+  /* Waiting */
+  #waiting { text-align: center; padding: 3rem 1rem; }
+  .spinner { width: 40px; height: 40px; border: 3px solid rgba(201,168,76,0.2); border-top-color: var(--gold); border-radius: 50%; animation: spin 1s linear infinite; margin: 1rem auto; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  
+  /* Game UI */
+  #game-ui { display: none; }
+  .top-bar { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1rem; background: var(--card-bg); border-radius: 10px; margin-bottom: 1rem; border: 1px solid rgba(201,168,76,0.15); }
+  .total-big { font-family: 'Cinzel', serif; font-size: 2rem; font-weight: 900; }
+  .your-turn-banner { background: linear-gradient(135deg, rgba(201,168,76,0.3), rgba(139,76,247,0.3)); border: 1px solid var(--gold); border-radius: 8px; padding: 0.6rem 1rem; text-align: center; font-family: 'Cinzel', serif; font-size: 0.9rem; letter-spacing: 0.1em; color: var(--gold); margin-bottom: 1rem; animation: pulse 1.5s ease-in-out infinite; display: none; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.6; } }
+  
+  .hand-section h3 { font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 0.15em; color: rgba(232,220,200,0.5); text-transform: uppercase; margin-bottom: 0.8rem; }
+  .hand-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; }
+  
+  .play-card {
+    background: linear-gradient(145deg, #2a2133, #1a1520);
+    border: 1.5px solid rgba(201,168,76,0.3);
+    border-radius: 8px;
+    padding: 0.6rem 0.5rem;
+    min-width: 60px;
+    max-width: 80px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    flex: 1;
+  }
+  .play-card:hover { transform: translateY(-6px); border-color: var(--gold); box-shadow: 0 8px 20px rgba(201,168,76,0.3); z-index: 10; }
+  .play-card.disabled { opacity: 0.4; cursor: not-allowed; pointer-events: none; }
+  .play-card.number-card .card-val { font-family: 'Cinzel', serif; font-size: 1.5rem; font-weight: 900; color: var(--gold); }
+  .play-card.special-card .card-val { font-size: 0.6rem; font-family: 'Cinzel', serif; color: #b88af0; letter-spacing: 0.05em; line-height: 1.3; }
+  .card-suit { font-size: 0.6rem; color: rgba(232,220,200,0.3); margin-top: 0.2rem; }
+  
+  .players-row { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem; }
+  .player-chip { font-size: 0.75rem; padding: 0.3rem 0.6rem; border-radius: 20px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 0.3rem; cursor: pointer; transition: all 0.15s; }
+  .player-chip.active { border-color: var(--gold); background: rgba(201,168,76,0.1); }
+  .player-chip.current { border-color: #b88af0; background: rgba(139,76,247,0.15); }
+  .player-chip.targetable { border-color: #4ade80; cursor: pointer; }
+  .player-chip.targetable:hover { background: rgba(74,222,128,0.15); }
+  
+  .fate-mini { display: flex; align-items: center; gap: 0.8rem; }
+  .fate-stars { display: flex; gap: 3px; }
+  .fate-star { font-size: 0.9rem; }
+  
+  /* Choice modal */
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.8); display: flex; align-items: center; justify-content: center; z-index: 100; display: none; }
+  .modal-box { background: var(--card-bg); border: 1px solid rgba(201,168,76,0.4); border-radius: 12px; padding: 2rem; text-align: center; max-width: 300px; }
+  .modal-box h3 { font-family: 'Cinzel', serif; color: var(--gold); margin-bottom: 1rem; }
+  .choice-btn { display: block; width: 100%; margin-bottom: 0.5rem; padding: 0.8rem; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.15); border-radius: 6px; color: #e8dcc8; font-family: 'Cinzel', serif; cursor: pointer; transition: all 0.15s; }
+  .choice-btn:hover { background: rgba(201,168,76,0.15); border-color: var(--gold); }
+  
+  .log-mini { font-size: 0.8rem; color: rgba(232,220,200,0.5); margin-top: 0.5rem; max-height: 80px; overflow-y: auto; }
+  .log-mini div { padding: 0.15rem 0; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  
+  /* Oracle peek */
+  .oracle-peek { background: rgba(139,76,247,0.1); border: 1px solid rgba(139,76,247,0.3); border-radius: 8px; padding: 1rem; margin: 0.5rem 0; }
+  
+  /* Game over */
+  #game-over { display: none; text-align: center; padding: 3rem 1rem; }
+  .winner-display { font-family: 'Cinzel', serif; font-size: 3rem; font-weight: 900; margin: 1rem 0; }
+
+  .round-badge { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 4px; padding: 0.2rem 0.6rem; font-size: 0.75rem; font-family: 'Cinzel', serif; }
+</style>
+</head>
+<body>
+<div id="nay-sire-prompt" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.7); align-items:center; justify-content:center; z-index:100;">
+  <div style="background:var(--card-bg); border:1px solid rgba(201,168,76,0.4); border-radius:12px; padding:2rem; text-align:center; max-width:400px;">
+    <div style="font-family:'Cinzel',serif; color:var(--gold); font-size:1.1rem; margin-bottom:0.5rem;">Nay Sire!</div>
+    <div id="nay-sire-text" style="color:rgba(232,220,200,0.7); margin-bottom:1.5rem; font-size:0.95rem;"></div>
+    <div style="display:flex; gap:1rem; justify-content:center;">
+      <button onclick="respondNaySire(true)"  class="action-btn">Block It</button>
+      <button onclick="respondNaySire(false)" class="action-btn" style="background:rgba(255,255,255,0.1);">Allow</button>
+    </div>
+  </div>
+</div>
+<div class="layout">
+  <div id="waiting">
+    <div style="font-family:'Cinzel',serif;font-size:1.5rem;color:var(--gold);margin-bottom:0.5rem">⚜ Fateline</div>
+    <p style="color:rgba(232,220,200,0.5)">Welcome, <strong style="color:#e8dcc8">{{name}}</strong></p>
+    <div class="spinner"></div>
+    <p style="color:rgba(232,220,200,0.4);font-style:italic">Waiting for the game to begin...</p>
+  </div>
+
+  <div id="role-reveal">
+    <div style="font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:0.2em;color:rgba(232,220,200,0.4);margin-bottom:1rem">YOUR CHARACTER</div>
+    <div class="role-card" id="role-card-display">
+      <div class="role-name" id="role-name-display">—</div>
+      <div id="team-badge-display"></div>
+      <div class="ability-text" id="ability-text-display"></div>
+    </div>
+    <button onclick="proceedToGame()" style="background:linear-gradient(135deg,#c9a84c,#8b6820);border:none;border-radius:6px;padding:0.8rem 2rem;color:#0d0a0e;font-family:'Cinzel',serif;font-weight:700;cursor:pointer;margin-top:1rem;letter-spacing:0.1em;">Enter the Arena</button>
+  </div>
+
+  <div id="game-ui">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.8rem">
+      <div style="font-family:'Cinzel',serif;font-size:0.9rem;color:var(--gold)">⚜ {{name}}</div>
+      <div class="round-badge" id="round-display">Round 1</div>
+      <div id="role-mini-display" style="font-size:0.75rem;color:rgba(232,220,200,0.4)"></div>
+    </div>
+    
+    <div id="your-turn-banner" class="your-turn-banner">🎭 YOUR TURN</div>
+    
+    <div class="top-bar">
+      <div>
+        <div style="font-size:0.7rem;letter-spacing:0.15em;color:rgba(232,220,200,0.4);text-transform:uppercase">Total</div>
+        <div class="total-big" id="total-display">0</div>
+      </div>
+      <div style="text-align:right">
+        <div id="fate-display" class="fate-mini"></div>
+      </div>
+    </div>
+    
+    <div class="players-row" id="players-row"></div>
+    
+    <div class="hand-section">
+      <h3>Your Hand (<span id="hand-count">0</span> cards)</h3>
+      <div class="hand-grid" id="hand-grid"></div>
+    </div>
+    
+    <div class="log-mini" id="log-mini"></div>
+  </div>
+
+  <div id="game-over">
+    <div style="font-size:3rem;margin-bottom:0.5rem" id="go-emoji">🏆</div>
+    <div style="font-family:'Cinzel',serif;font-size:1rem;color:rgba(232,220,200,0.5)">THE VICTORS</div>
+    <div class="winner-display" id="winner-display">—</div>
+  </div>
+</div>
+
+<!-- Choice Modal -->
+<div class="modal" id="choice-modal">
+  <div class="modal-box">
+    <h3 id="modal-title">Choose</h3>
+    <div id="modal-choices"></div>
+    <button class="choice-btn" onclick="closeModal()" style="margin-top:0.5rem;color:rgba(232,220,200,0.4)">Cancel</button>
+  </div>
+</div>
+
+<script>
+const socket = io();
+const gameCode = "{{code}}";
+const playerName = "{{name}}";
+
+const ABILITIES = {
+  Queen: "Royal Decree – demand a specific card from the next 2 players",
+  Jester: "Chaos' Incarnate – rotate everyone's hands",
+  Knight: "Guerrilla Tactics – swap seats with a player of choice",
+  Horse: "Valiant Leap – jump to next court player",
+  Oracle: "Foresight – see next player's cards",
+  Ogre: "Berserker – block next 2 court players",
+  Witch: "Malediction – add or subtract 2 from total",
+  Werewolf: "Night's Bandit – steal 2 random cards from next player"
+};
+
+let myRole = null;
+let myTeam = null;
+let mySid = null;
+let gameState = null;
+let pendingCardIdx = null;
+let targetingMode = false;
+let pendingCardForTarget = null;
+
+socket.emit("player_join", {game_code: gameCode, player_name: playerName});
+
+socket.on("connect", () => { mySid = socket.id; });
+
+socket.on("role_assigned", (data) => {
+  myRole = data.role;
+  myTeam = data.team;
+  
+  document.getElementById("waiting").style.display = "none";
+  document.getElementById("role-reveal").style.display = "block";
+  document.getElementById("role-name-display").textContent = myRole;
+  
+  const badge = document.getElementById("team-badge-display");
+  badge.innerHTML = `<div class="team-badge ${myTeam === 'courts' ? 'court-badge' : 'monster-badge'}">${myTeam}</div>`;
+  
+  document.getElementById("ability-text-display").textContent = ABILITIES[myRole] || "";
+  
+  // Color the role card
+  const card = document.getElementById("role-card-display");
+  if (myTeam === 'courts') {
+    card.style.borderColor = "rgba(201,168,76,0.6)";
+  } else {
+    card.style.borderColor = "rgba(139,76,247,0.6)";
+  }
+});
+
+function proceedToGame() {
+  document.getElementById("role-reveal").style.display = "none";
+  document.getElementById("game-ui").style.display = "block";
+  if (gameState) renderGameState(gameState);
+}
+
+function respondNaySire(blocked) {
+    socket.emit("nay_sire_response", { game_code: gameCode, blocked: blocked });
+    document.getElementById("nay-sire-prompt").style.display = "none";
+  }
+
+socket.on("game_state", (data) => {
+  const pa = data.pending_action;
+  const nayPrompt = document.getElementById("nay-sire-prompt");
+    if (pa && pa.type === "nay_sire_check" && pa.target_sid === data.your_sid) {
+      document.getElementById("nay-sire-text").textContent =
+        `${pa.target_name}, someone played ${pa.card_label} against you. Use your Nay Sire to block it?`;
+      nayPrompt.style.display = "flex";
+    } else {
+      nayPrompt.style.display = "none";
+    }
+  gameState = data;
+  mySid = data.your_sid || mySid;
+  
+  if (data.state === "game_over") {
+    showGameOver(data);
+    return;
+  }
+  
+  if (document.getElementById("game-ui").style.display === "block") {
+    renderGameState(data);
+  }
+});
+
+socket.on("oracle_peek", (data) => {
+  const names = data.hand.map(c => c.label).join(", ");
+  alert(`🔮 Oracle Foresight: ${data.target_name}'s hand: ${names}`);
+});
+
+function renderGameState(data) {
+  const curPlayer = data.players[data.current_player_idx];
+  const isMyTurn = curPlayer && curPlayer.sid === mySid;
+  
+  document.getElementById("round-display").textContent = "Round " + data.round;
+  document.getElementById("role-mini-display").textContent = (myRole || "") + " · " + (myTeam || "");
+  
+  // Total
+  const total = data.running_total;
+  const totalEl = document.getElementById("total-display");
+  totalEl.textContent = total;
+  totalEl.style.color = total >= 11 ? "#ef4444" : total >= 8 ? "#f59e0b" : "#fff";
+  
+  // Your turn banner
+  document.getElementById("your-turn-banner").style.display = isMyTurn ? "block" : "none";
+  
+  // Fate line
+  const fp = data.fate_points || {};
+  const fateEl = document.getElementById("fate-display");
+  fateEl.innerHTML = "";
+  ["courts", "monsters"].forEach(team => {
+    const pts = fp[team] || 0;
+    const color = team === "courts" ? "var(--gold)" : "#b88af0";
+    const div = document.createElement("div");
+    div.style.cssText = "display:flex;flex-direction:column;align-items:center;gap:2px";
+    div.innerHTML = `<div style="font-size:0.6rem;font-family:'Cinzel',serif;color:${color};letter-spacing:0.1em">${team.toUpperCase()}</div>
+      <div class="fate-stars">${Array(5).fill(0).map((_, i) => `<span class="fate-star" style="color:${i < pts ? color : 'rgba(255,255,255,0.15)'}">${i < pts ? "★" : "☆"}</span>`).join("")}</div>`;
+    fateEl.appendChild(div);
+  });
+  
+  // Players row
+  const pr = document.getElementById("players-row");
+  pr.innerHTML = "";
+  data.players.forEach((p, i) => {
+    const chip = document.createElement("div");
+    const isCurrent = i === data.current_player_idx;
+    const isMe = p.sid === mySid;
+    chip.className = "player-chip" + (isMe ? " active" : "") + (isCurrent ? " current" : "");
+    chip.dataset.sid = p.sid;
+    chip.innerHTML = `<span>${isCurrent ? "▶ " : ""}${p.name}</span><span style="opacity:0.5">${p.card_count}🃏</span>`;
+    if (targetingMode && !isMe) {
+      chip.classList.add("targetable");
+      chip.onclick = () => selectTarget(p.sid);
+    }
+    pr.appendChild(chip);
+  });
+  
+  // Hand
+  const hand = data.your_hand || [];
+  document.getElementById("hand-count").textContent = hand.length;
+  const hg = document.getElementById("hand-grid");
+  hg.innerHTML = "";
+  hand.forEach((card, idx) => {
+    const div = document.createElement("div");
+    div.className = "play-card " + (card.type === "number" ? "number-card" : "special-card");
+    if (!isMyTurn) div.classList.add("disabled");
+    div.innerHTML = `<div class="card-val">${card.label}</div><div class="card-suit">${card.type === "special" ? "✦" : "◆"}</div>`;
+    div.onclick = () => playCard(idx, card);
+    hg.appendChild(div);
+  });
+  
+  // Log
+  const logEl = document.getElementById("log-mini");
+  logEl.innerHTML = "";
+  (data.log || []).forEach(entry => {
+    const d = document.createElement("div");
+    d.textContent = entry;
+    logEl.appendChild(d);
+  });
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function playCard(idx, card) {
+  if (!gameState) return;
+  const curPlayer = gameState.players[gameState.current_player_idx];
+  if (!curPlayer || curPlayer.sid !== mySid) return;
+  
+  // 5/0 choice
+  if (card.choice) {
+    pendingCardIdx = idx;
+    showModal("Choose Value", [
+      { label: "Play 5", value: 5 },
+      { label: "Play 0", value: 0 }
+    ], (v) => {
+      socket.emit("play_card", { game_code: gameCode, card_idx: idx, choice: v });
+    });
+    return;
+  }
+  
+  // Courts & Monsters ability - some need target
+  if (card.action === "courts" && (myRole === "Knight")) {
+    targetingMode = true;
+    pendingCardForTarget = idx;
+    renderGameState(gameState);
+    return;
+  }
+  
+  socket.emit("play_card", { game_code: gameCode, card_idx: idx });
+}
+
+function selectTarget(targetSid) {
+  targetingMode = false;
+  socket.emit("play_card", { game_code: gameCode, card_idx: pendingCardForTarget, target_sid: targetSid });
+  pendingCardForTarget = null;
+  renderGameState(gameState);
+}
+
+function showModal(title, choices, cb) {
+  document.getElementById("modal-title").textContent = title;
+  const choicesEl = document.getElementById("modal-choices");
+  choicesEl.innerHTML = "";
+  choices.forEach(c => {
+    const btn = document.createElement("button");
+    btn.className = "choice-btn";
+    btn.textContent = c.label;
+    btn.onclick = () => { closeModal(); cb(c.value); };
+    choicesEl.appendChild(btn);
+  });
+  document.getElementById("choice-modal").style.display = "flex";
+}
+
+function closeModal() {
+  document.getElementById("choice-modal").style.display = "none";
+}
+
+function showGameOver(data) {
+  document.getElementById("game-ui").style.display = "none";
+  document.getElementById("game-over").style.display = "block";
+  const winner = data.winner_team;
+  const isWinner = (myTeam === winner);
+  document.getElementById("go-emoji").textContent = isWinner ? "🏆" : "💀";
+  document.getElementById("winner-display").textContent = winner ? winner.toUpperCase() : "—";
+  document.getElementById("winner-display").style.color = winner === "courts" ? "var(--gold)" : "#b88af0";
+}
+</script>
+</body>
+</html>

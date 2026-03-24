@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fateline – Join</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Crimson+Pro:ital,wght@0,300;0,400;1,300&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --deep: #0d0a0e;
+    --card-bg: #1a1520;
+    --accent: #8b4cf7;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--deep);
+    color: #e8dcc8;
+    font-family: 'Crimson Pro', serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 80% 60% at 20% 40%, rgba(139,76,247,0.08) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 80% at 80% 70%, rgba(201,168,76,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .container {
+    text-align: center;
+    padding: 3rem 2rem;
+    max-width: 420px;
+    width: 100%;
+    position: relative;
+  }
+  .sigil {
+    font-size: 4rem;
+    margin-bottom: 0.5rem;
+    filter: drop-shadow(0 0 20px rgba(201,168,76,0.4));
+  }
+  h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 2.4rem;
+    font-weight: 900;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    margin-bottom: 0.3rem;
+  }
+  .subtitle {
+    font-style: italic;
+    color: rgba(232,220,200,0.5);
+    font-size: 1.1rem;
+    margin-bottom: 2.5rem;
+  }
+  .card {
+    background: var(--card-bg);
+    border: 1px solid rgba(201,168,76,0.2);
+    border-radius: 12px;
+    padding: 2rem;
+    position: relative;
+  }
+  .card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: linear-gradient(135deg, rgba(201,168,76,0.05) 0%, transparent 60%);
+    pointer-events: none;
+  }
+  label {
+    display: block;
+    text-align: left;
+    font-size: 0.8rem;
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+  }
+  input {
+    width: 100%;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(201,168,76,0.3);
+    border-radius: 6px;
+    padding: 0.75rem 1rem;
+    color: #e8dcc8;
+    font-family: 'Crimson Pro', serif;
+    font-size: 1.1rem;
+    margin-bottom: 1.2rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  input:focus { border-color: var(--gold); }
+  button {
+    width: 100%;
+    background: linear-gradient(135deg, #8b4cf7, #5e2faa);
+    border: none;
+    border-radius: 6px;
+    padding: 0.9rem;
+    color: #fff;
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-transform: uppercase;
+  }
+  button:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(139,76,247,0.4); }
+  .error {
+    background: rgba(220,50,50,0.15);
+    border: 1px solid rgba(220,50,50,0.4);
+    border-radius: 6px;
+    padding: 0.6rem 1rem;
+    color: #f87171;
+    font-size: 0.95rem;
+    margin-bottom: 1rem;
+  }
+  .host-link {
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+    color: rgba(232,220,200,0.4);
+  }
+  .host-link a { color: var(--gold); text-decoration: none; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="sigil">⚜</div>
+  <h1>Fateline</h1>
+  <p class="subtitle">A game of courts and monsters</p>
+  <div class="card">
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="POST">
+      <label>Your Name</label>
+      <input name="name" placeholder="Enter your name" required autocomplete="off">
+      <label>Game Code</label>
+      <input name="code" placeholder="e.g. XK7F2M" required autocomplete="off" style="text-transform:uppercase">
+      <button type="submit">Enter the Arena</button>
+    </form>
+  </div>
+  <p class="host-link"><a href="/host">Host a game</a></p>
+</div>
+</body>
+</html>
