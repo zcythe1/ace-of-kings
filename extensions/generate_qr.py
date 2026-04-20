@@ -1,7 +1,7 @@
 from itsdangerous import URLSafeTimedSerializer
 from PIL import Image, ImageDraw, ImageFont
 import qrcode
-import product_codes_dict
+from extensions import product_codes_dict
 import os
 import argparse
 
@@ -31,7 +31,7 @@ def generate_qr_code(product_id, label):
     draw = ImageDraw.Draw(canvas)
     draw.text(((qr_w - text_w) // 2, qr_h + padding), label, fill="black", font=font)
 
-    os.makedirs("qrcodes", exist_ok=True)
+    os.makedirs("../qrcodes", exist_ok=True)
     canvas.save(f"qrcodes/{product_id}.png")
     print(f"Saved qrcodes/{product_id}.png")
 

@@ -4,16 +4,22 @@ from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 import random
 import string
 from werkzeug.security import check_password_hash
-import threading
-import product_codes_dict
+from extensions import product_codes_dict
+from extensions.general import *
+from config import *
+from routes.routes_dev import dev_bp
+from routes.routes_game import game_bp
+from routes.routes_main import main_bp
+from ws import game_ws
+from utils.game_manager import *
 
 
 app = Flask(__name__)
-app.secret_key = "youngenterprise"
-socketio = SocketIO(app, cors_allowed_origins="*")
+app.secret_key = SECRET_KEY
 
-serializer = URLSafeTimedSerializer(app.secret_key)
+socketio.init_app(app)
 
+<<<<<<< HEAD
 ADMIN_PASSWORD_HASH = "scrypt:32768:8:1$6jy3oGhWeTkcPgnk$24daa97b98a863051d0872bd197a897a1db1cdff410d3ea08381994a29c463d7e320548f5546ff3da6de41e779e02635762afa946f7fc4962a5feae6aef6e668"
 
 ROLES = ["Oracle", "Ogre", "Witch", "Werewolf", "Queen", "Jester", "Knight", "Horse"]
@@ -641,6 +647,11 @@ def host_dev():
         error = ""
 
     return render_template("host_dev.html", error=error)
+=======
+app.register_blueprint(game_bp)
+app.register_blueprint(dev_bp)
+app.register_blueprint(main_bp)
+>>>>>>> 2d5520cd3cd84dbdc71ab29dbbec6089f4a73c57
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)

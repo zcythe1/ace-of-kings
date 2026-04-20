@@ -1,5 +1,9 @@
 venv/
+<<<<<<< HEAD
 qrcodes/
 qrcodes.rar
 product_codes.json
 .env
+=======
+.env
+>>>>>>> 2d5520cd3cd84dbdc71ab29dbbec6089f4a73c57
