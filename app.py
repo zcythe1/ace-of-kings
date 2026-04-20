@@ -27,6 +27,19 @@ FATE_LINE_LENGTH = 5
 valid_product_codes = product_codes_dict.valid_product_codes
 active_games = {}
 
+def validate_product_id(product_id):
+    """Validate product ID against Supabase"""
+    valid_product_codes.data = valid_product_codes._load()
+    return product_id in valid_product_codes
+
+def validate_product_key(key):
+    """Validate product key against Supabase and return the product_id"""
+    valid_product_codes.data = valid_product_codes._load()
+    for product_id, data in valid_product_codes.items():
+        if data.get("key", "").upper() == key.upper():
+            return product_id
+    return None
+
 def generate_game_code(length=6):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
 
@@ -253,7 +266,7 @@ def play():
         return "QR code expired."
     except BadSignature:
         return "Invalid QR code."
-    if product_id not in valid_product_codes:
+    if not validate_product_id(product_id):
         return "Product not recognized."
     session["product_id"] = product_id
     return redirect("/host")
@@ -297,16 +310,11 @@ def join():
     return render_template("join.html", error="")
 
 @app.route("/", methods=["GET", "POST"])
-@app.route("/", methods=["GET", "POST"])
 def index():
     error = ""
     if request.method == "POST":
         entered_key = request.form.get("key", "").strip().upper()
-        matched_id = None
-        for product_id, data in valid_product_codes.items():
-            if data.get("key", "").upper() == entered_key:
-                matched_id = product_id
-                break
+        matched_id = validate_product_key(entered_key)
         if not matched_id:
             error = "Key not recognised."
         else:
@@ -626,7 +634,6 @@ def host_dev():
         password = request.form.get("password", "")
         if check_password_hash(ADMIN_PASSWORD_HASH, password):
             session["product_id"] = "dev"
-            valid_product_codes["dev"] = {"used": False}
             return redirect("/host")
         else:
             error = "Wrong password."

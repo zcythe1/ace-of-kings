@@ -3,3 +3,5 @@ flask-socketio
 itsdangerous
 eventlet
 qrcode
+supabase-py
+python-dotenv

@@ -1,1 +1,5 @@
 venv/
+qrcodes/
+qrcodes.rar
+product_codes.json
+.env
