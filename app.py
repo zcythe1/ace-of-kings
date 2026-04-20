@@ -15,11 +15,11 @@ from utils.game_manager import *
 
 
 app = Flask(__name__)
-app.secret_key = SECRET_KEY
+app.secret_key = "youngenterprise"
+socketio = SocketIO(app, cors_allowed_origins="*")
 
-socketio.init_app(app)
+serializer = URLSafeTimedSerializer(app.secret_key)
 
-<<<<<<< HEAD
 ADMIN_PASSWORD_HASH = "scrypt:32768:8:1$6jy3oGhWeTkcPgnk$24daa97b98a863051d0872bd197a897a1db1cdff410d3ea08381994a29c463d7e320548f5546ff3da6de41e779e02635762afa946f7fc4962a5feae6aef6e668"
 
 ROLES = ["Oracle", "Ogre", "Witch", "Werewolf", "Queen", "Jester", "Knight", "Horse"]
@@ -32,19 +32,6 @@ FATE_LINE_LENGTH = 5
 
 valid_product_codes = product_codes_dict.valid_product_codes
 active_games = {}
-
-def validate_product_id(product_id):
-    """Validate product ID against Supabase"""
-    valid_product_codes.data = valid_product_codes._load()
-    return product_id in valid_product_codes
-
-def validate_product_key(key):
-    """Validate product key against Supabase and return the product_id"""
-    valid_product_codes.data = valid_product_codes._load()
-    for product_id, data in valid_product_codes.items():
-        if data.get("key", "").upper() == key.upper():
-            return product_id
-    return None
 
 def generate_game_code(length=6):
     return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
@@ -272,7 +259,7 @@ def play():
         return "QR code expired."
     except BadSignature:
         return "Invalid QR code."
-    if not validate_product_id(product_id):
+    if product_id not in valid_product_codes:
         return "Product not recognized."
     session["product_id"] = product_id
     return redirect("/host")
@@ -316,11 +303,16 @@ def join():
     return render_template("join.html", error="")
 
 @app.route("/", methods=["GET", "POST"])
+@app.route("/", methods=["GET", "POST"])
 def index():
     error = ""
     if request.method == "POST":
         entered_key = request.form.get("key", "").strip().upper()
-        matched_id = validate_product_key(entered_key)
+        matched_id = None
+        for product_id, data in valid_product_codes.items():
+            if data.get("key", "").upper() == entered_key:
+                matched_id = product_id
+                break
         if not matched_id:
             error = "Key not recognised."
         else:
@@ -640,6 +632,7 @@ def host_dev():
         password = request.form.get("password", "")
         if check_password_hash(ADMIN_PASSWORD_HASH, password):
             session["product_id"] = "dev"
+            valid_product_codes["dev"] = {"used": False}
             return redirect("/host")
         else:
             error = "Wrong password."
@@ -647,11 +640,6 @@ def host_dev():
         error = ""
 
     return render_template("host_dev.html", error=error)
-=======
-app.register_blueprint(game_bp)
-app.register_blueprint(dev_bp)
-app.register_blueprint(main_bp)
->>>>>>> 2d5520cd3cd84dbdc71ab29dbbec6089f4a73c57
 
 if __name__ == "__main__":
     socketio.run(app, debug=True, host="0.0.0.0", port=5000)
