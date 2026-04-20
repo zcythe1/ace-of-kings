@@ -1,7 +1,7 @@
 from flask import Flask, request, redirect, session, render_template
 from flask_socketio import SocketIO, join_room, emit
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-import random
+from random import choices, shuffle, randint
 import string
 from werkzeug.security import check_password_hash
 from extensions import product_codes_dict
@@ -34,7 +34,7 @@ valid_product_codes = product_codes_dict.valid_product_codes
 active_games = {}
 
 def generate_game_code(length=6):
-    return ''.join(random.choices(string.ascii_uppercase + string.digits, k=length))
+    return ''.join(choices(string.ascii_uppercase + string.digits, k=length))
 
 def create_deck():
     deck = []
@@ -54,7 +54,7 @@ def create_deck():
     for _ in range(3): deck.append({"type": "special", "action": "skip", "label": "Skipping Stones"})
     for _ in range(2): deck.append({"type": "special", "action": "replace", "label": "Replace"})
     for _ in range(2): deck.append({"type": "special", "action": "rearrange", "label": "Rearrange"})
-    random.shuffle(deck)
+    shuffle(deck)
     return deck
 
 def deal_cards(deck, num_players, cards_per_player=7):
@@ -207,15 +207,15 @@ def start_game(game_code):
     n = len(players)
     courts_pool = COURTS.copy()
     monsters_pool = MONSTERS.copy()
-    random.shuffle(courts_pool)
-    random.shuffle(monsters_pool)
+    shuffle(courts_pool)
+    shuffle(monsters_pool)
 
     half = n // 2
     courts_count = half
     monsters_count = n - half
 
     available_roles = courts_pool[:courts_count] + monsters_pool[:monsters_count]
-    random.shuffle(available_roles)
+    shuffle(available_roles)
     
     for i, player in enumerate(players):
         player["role"] = available_roles[i]
@@ -407,7 +407,7 @@ def resolve_blockable_action(action, player_idx, game_code):
     elif action == "barter":
         if player["hand"] and next_player["hand"]:
             give_card = player["hand"].pop(0)
-            take_card = next_player["hand"].pop(random.randint(0, len(next_player["hand"]) - 1))
+            take_card = next_player["hand"].pop(randint(0, len(next_player["hand"]) - 1))
             player["hand"].append(take_card)
             next_player["hand"].append(give_card)
             add_log(game, f"🔀 {player['name']} bartered with {next_player['name']}!")
@@ -502,7 +502,7 @@ def handle_play_card(data):
             all_cards = []
             for p in game["players"]:
                 all_cards.extend(p["hand"])
-            random.shuffle(all_cards)
+            shuffle(all_cards)
             per = len(all_cards) // n
             for i, p in enumerate(game["players"]):
                 p["hand"] = all_cards[i*per:(i+1)*per]
@@ -612,7 +612,7 @@ def handle_character_ability(game_code, player, role, target_sid=None):
         add_log(game, f"👹 Ogre blocks next 2 court members!")
     
     elif role == "Witch":
-        choice = random.choice([2, -2])
+        choice = choice([2, -2])
         game["running_total"] = max(0, game["running_total"] + choice)
         op = "+" if choice > 0 else ""
         add_log(game, f"🧙 Witch's Malediction! Total {op}{choice} → {game['running_total']}")
@@ -621,7 +621,7 @@ def handle_character_ability(game_code, player, role, target_sid=None):
         stolen = 0
         for _ in range(2):
             if next_player["hand"]:
-                idx_steal = random.randint(0, len(next_player["hand"])-1)
+                idx_steal = randint(0, len(next_player["hand"])-1)
                 player["hand"].append(next_player["hand"].pop(idx_steal))
                 stolen += 1
         add_log(game, f"🐺 Werewolf stole {stolen} card(s) from {next_player['name']}!")
